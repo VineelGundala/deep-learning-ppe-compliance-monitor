@@ -1,0 +1,6 @@
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 6
+names: ['hardhat', 'no_hardhat', 'safety_vest', 'no_safety_vest', 'person', 'fall_detected']
