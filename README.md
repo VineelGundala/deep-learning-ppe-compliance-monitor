@@ -8,7 +8,7 @@
 
 ## Demo
 
-![Compliance Detection Demo](outputs/gradcam_grid.png)
+![Compliance Detection Demo](outputs/gradcam.png)
 
 ---
 
@@ -79,7 +79,7 @@ helmet area for hardhat detection, torso for vest detection,
 and body posture for fall detection.
 Red and yellow regions indicate highest model attention.
 
-![Grad-CAM Grid](outputs/gradcam_grid.png)
+![Grad-CAM Grid](outputs/gradcam.png)
 
 ---
 
@@ -137,7 +137,7 @@ deep-learning-ppe-compliance-monitor/
 ├── outputs/
 │   ├── training_curves.png  # Loss and accuracy curves
 │   ├── confusion_matrix.png # Per class evaluation
-│   └── gradcam_grid.png     # Grad-CAM explainability grid
+│   └── gradcam.png     # Grad-CAM explainability grid
 └── README.md
 
 ---
