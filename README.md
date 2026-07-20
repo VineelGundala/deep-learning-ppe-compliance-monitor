@@ -55,24 +55,6 @@ PPE compliance monitoring that:
 
 ---
 
-## Training Curves
-
-Training and validation loss and accuracy across 20 epochs. 
-Best model saved at epoch 6 before overfitting begins.
-
-![Training Curves](outputs/training_curves.png)
-
----
-
-## Confusion Matrix
-
-Per class classification performance on 9,619 unseen test samples.
-Strong diagonal confirms the model generalizes well across all 6 classes.
-
-![Confusion Matrix](outputs/confusion_matrix.png)
-
----
-
 ## Grad-CAM Explainability
 
 Heatmaps confirm the model attends to correct regions —
