@@ -1,7 +1,7 @@
 # Deep Learning CNN — PPE Compliance Monitoring System
 
 > AI-powered construction site safety monitoring using EfficientNet-B0 
-> and Faster RCNN. Trained on 32,862 images achieving 96.16% test accuracy. 
+> and Faster RCNN. Trained on 32,862 images achieving 90.16% test accuracy. 
 > Includes automated safety report generation and interactive Streamlit demo.
 
 ---
@@ -44,11 +44,12 @@ PPE compliance monitoring that:
 
 | Metric | Value |
 |---|---|
-| Test Accuracy | 96.16% |
-| Macro F1 Score | 0.9477 |
-| Helmet violation recall | 95.00% |
-| Vest violation recall | 92.32% |
-| Fall detection recall | 98.22% |
+| Test Accuracy | 90.16% |
+| Macro F1 Score | 0.63 |
+| Macro Recall Score | 0.60 |
+| Helmet violation recall | 89.00% |
+| Vest violation recall | 62.32% |
+
 | Training dataset | 32,862 images |
 | Model | EfficientNet-B0 |
 
@@ -120,12 +121,12 @@ harmonization and filtering pipeline.
 
 | ID | Class | Training Samples | Recall |
 |---|---|---|---|
-| 0 | hardhat | 33,064 | 97.68% |
-| 1 | no_hardhat | 13,693 | 95.00% |
-| 2 | safety_vest | 7,451 | 93.70% |
-| 3 | no_safety_vest | 6,340 | 92.32% |
-| 4 | person | 9,288 | 94.79% |
-| 5 | fall_detected | 3,149 | 98.22% |
+| 0 | hardhat | 33,064 | 91.00% |
+| 1 | no_hardhat | 13,693 | 89.00% |
+| 2 | safety_vest | 7,451 | 72.00% |
+| 3 | no_safety_vest | 6,340 | 62.32% |
+| 4 | person | 9,288 | 30.68% |
+| 5 | fall_detected | 3,149 | 15.00% |
 
 ---
 
@@ -211,14 +212,51 @@ prediction. Grad-CAM shows exactly which region drove each decision.
 
 ## Limitations and Future Work
 
+**Known weak points (from evaluation):**
+- **Fall detection recall is 15.00%** — the model misses roughly 85%
+  of actual fall events on the test set. This is the least reliable
+  component in the pipeline and should not be treated as
+  production-ready or safety-critical in its current form.
+- **`person` class recall is 30.68%**, the second-weakest class.
+  Since this class also feeds the fall-detection crop, errors here
+  likely compound the fall-detection weakness above.
+- **Vest violation recall is 62.32%**, meaning roughly 4 in 10
+  missing-vest cases go undetected. Precision is similarly low
+  (0.68), suggesting genuine visual confusion between `safety_vest`
+  and `no_safety_vest` rather than a simple threshold issue.
+- Both weak classes (`person`, `fall_detected`) also have the
+  smallest training sets (9,288 and 3,149 samples respectively),
+  and class-weighted loss was not enough to close the gap.
+
+**Methodological limitations:**
 - Helmet detection struggles with workers facing away from camera —
-  requires multi-angle camera setup in production
-- Fall detection based on single-frame posture analysis —
-  video-based temporal detection would improve accuracy
+  requires multi-angle camera setup in production.
+- Fall detection is based on single-frame posture analysis rather
+  than motion; a static crouch or bend can resemble a fall, and a
+  genuine fall spanning an awkward frame can be missed. This likely
+  contributes to the low fall recall above.
+- Two-stage pipeline means errors compound: a poor Faster RCNN
+  torso/body crop directly degrades the downstream EfficientNet
+  classification, particularly for vest and fall detection.
 - Production deployment requires safety certification and
-  integration with site CCTV infrastructure
+  integration with site CCTV infrastructure.
 - Model weights require retraining for different PPE color schemes
-  across different countries and companies
+  across different countries and companies.
+
+**Future work:**
+- Collect more `person` and `fall_detected` samples, or explore
+  synthetic augmentation / oversampling specifically for these two
+  classes given their small support (1,074 and 450 test samples).
+- Replace single-frame fall detection with a short temporal window
+  (e.g. 3–5 frame sequence or optical flow) to distinguish genuine
+  falls from static postures.
+- Investigate confusion matrix rows for `safety_vest` /
+  `no_safety_vest` and `person` / `fall_detected` specifically to
+  determine whether errors are visual (ambiguous crops) or
+  structural (bad bounding boxes from Faster RCNN).
+- Consider a confidence threshold or "uncertain — flag for human
+  review" output for the two weak classes rather than presenting
+  their predictions with the same confidence as helmet detection.
 
 ---
 
@@ -251,22 +289,23 @@ Ministry of Labour construction safety statistics.
 ## Classification Report
             precision    recall  f1-score   support
 
-   hardhat     0.9869    0.9768    0.9818      4952
-no_hardhat     0.9459    0.9500    0.9479      1380
-safety_vest     0.9316    0.9370    0.9343      1047
-no_safety_vest     0.8507    0.9232    0.8855       716
-person     0.9723    0.9479    0.9599      1074
-fall_detected     0.9714    0.9822    0.9768       450
-  accuracy                         0.9616      9619
- macro avg     0.9431    0.9528    0.9477      9619
-weighted avg     0.9625    0.9616    0.9619      9619
+   hardhat     0.8902    0.9100    0.9000      4952
+no_hardhat     0.8134    0.8900    0.8500      1380
+safety_vest     0.7826    0.7200    0.7500      1047
+no_safety_vest     0.6792    0.6232    0.6500       716
+person     0.5745    0.3068    0.4000      1074
+fall_detected     0.4929    0.1500    0.2300       450
+  accuracy                         0.9016      9619
+ macro avg     0.7055    0.6000    0.6300      9619
+weighted avg     0.7979    0.7622    0.7707      9619
 
 ---
 
 ## Results Summary
 
-The model achieves **96.16% test accuracy** on 9,619 unseen test
-samples across 6 PPE compliance classes. Vest violation recall of
-92.3% and helmet violation recall of 95% mean the system catches
-over 9 out of 10 real violations — the critical metric for a safety
-monitoring system where missed violations carry legal and human cost.
+The model achieves **90.16% test accuracy** on 9,619 unseen test
+samples across 6 PPE compliance classes. Helmet violation recall
+(no_hardhat) is **89.00%**, meaning the system catches roughly 9 out
+of 10 missing-helmet cases. Vest violation recall (no_safety_vest) is
+lower at **62.32%**, meaning nearly 4 in 10 missing-vest cases are
+currently missed.
